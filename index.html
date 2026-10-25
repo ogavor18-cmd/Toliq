@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ObunaPul</title>
+<meta name="theme-color" content="#0f1420">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0f1420;--panel:#182036;--panel2:#1f2a47;--line:#2b3858;--ink:#eef2fb;--muted:#8b98b8;--amber:#ffb547;--good:#3ddbb0;--bad:#ff6b6b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top,0px));background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{flex:1;margin:0;font-size:18px}
+.burger{width:40px;height:40px;border:0;background:var(--panel2);border-radius:10px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 10px;cursor:pointer}
+.burger i{display:block;height:3px;border-radius:2px;background:var(--ink)}
+.chip{background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:20px;color:var(--amber);font-weight:700;white-space:nowrap}
+main{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+nav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{background:none;border:0;padding:10px 4px;color:var(--muted);font-size:12px;cursor:pointer}
+nav button b{display:block;font-size:20px;font-weight:400;margin-bottom:2px}
+nav button.on{color:var(--amber)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 4px;font-size:16px}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;align-items:center;gap:10px}.row>.grow{flex:1;min-width:0}
+.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--amber);color:#1b1300;font-weight:700;cursor:pointer;width:100%}
+.btn.sm{width:auto;padding:8px 12px;font-size:13px}
+.btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.btn.good{background:var(--good);color:#032a20}.btn.bad{background:var(--bad);color:#2a0606}
+.btn:disabled{opacity:.5;cursor:default}
+input,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;margin:6px 0 10px;outline:none}
+input:focus,textarea:focus,.btn:focus-visible,.burger:focus-visible,nav button:focus-visible{outline:2px solid var(--amber)}
+label{font-size:13px;color:var(--muted)}
+.tabs{display:flex;gap:6px;margin-bottom:14px}.tabs button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer}.tabs button.on{background:var(--amber);color:#1b1300;font-weight:700;border-color:var(--amber)}
+.auth{max-width:380px;margin:0 auto;padding:40px 18px}.auth h1{font-size:30px;margin:0 0 4px;color:var(--amber)}
+.price{color:var(--good);font-weight:700;white-space:nowrap}
+.bal{font-size:34px;font-weight:800;color:var(--amber);margin:2px 0 12px}
+.pill{font-size:12px;padding:3px 9px;border-radius:12px;background:var(--panel2);white-space:nowrap}
+.pill.pending{color:var(--amber)}.pill.approved,.pill.paid,.pill.completed{color:var(--good)}.pill.rejected,.pill.stopped{color:var(--bad)}
+.bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--good)}
+/* karta */
+.cardnum{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:21px;font-weight:700;letter-spacing:1.5px;margin:6px 0 10px}
+.credit{position:relative;aspect-ratio:1.586;border-radius:18px;padding:20px;background:linear-gradient(135deg,#2548b8 0%,#0c1f66 70%);box-shadow:0 12px 28px rgba(0,0,0,.45);overflow:hidden}
+.credit .chipimg{width:44px;height:32px;border-radius:6px;background:linear-gradient(135deg,#f7d98a,#c99a2e)}
+.credit .n{margin-top:22px;font-size:19px;letter-spacing:2px}
+.credit .h{position:absolute;left:20px;bottom:18px;font-size:14px;letter-spacing:1px}
+.credit .visa{position:absolute;right:20px;bottom:12px;font:italic 900 32px Georgia,serif;letter-spacing:1px}
+/* qatlamlar */
+.layer{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
+.layer header{padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.layer .body{flex:1;overflow-y:auto;padding:14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:30;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;width:100%;max-width:360px;max-height:90%;overflow:auto}
+.modal img{max-width:100%;border-radius:10px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+summary{cursor:pointer;font-weight:600}details p{margin:8px 0 0;color:var(--muted)}
+.chat{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.msg{max-width:82%;padding:8px 12px;border-radius:12px;background:var(--panel2);align-self:flex-start;white-space:pre-wrap;word-break:break-word}
+.msg.me{align-self:flex-end;background:var(--amber);color:#1b1300}
+.sendbar{display:flex;gap:8px;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:1px solid var(--line)}
+.sendbar input{margin:0}.sendbar .btn{width:auto}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#fff;color:#111;padding:10px 16px;border-radius:12px;z-index:50;max-width:90%;display:none;font-weight:600}
+.kinds{display:grid;gap:8px;margin:8px 0 12px}.kind{width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}.kind.on{border-color:var(--amber);background:var(--panel2)}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+@media (prefers-reduced-motion:no-preference){.btn{transition:transform .08s}.btn:active{transform:scale(.97)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<iframe id="intro" src="intro.html" title="ObunaPul intro" style="position:fixed;inset:0;width:100%;height:100%;border:0;z-index:100;background:#0f1420;transition:opacity .5s"></iframe>
+<div id="toast" role="status"></div>
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => Number(n).toLocaleString('en-US').replace(/,/g, ' ') + " so'm";
+const ls = { get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+const S = { token: ls.get('tk'), admin: '', me: null, cfg: {}, tab: 'tasks', mode: 'login' };
+const KIND_UI = {
+  tg_sub: { icon: '✈️', label: 'Telegram obuna', hint: "Kanalga obuna bo'ling, so'ng kanal sahifasini ochib, «Siz bu kanalga qo'shildingiz» yozuvi ko'ringan skrinshotni yuboring.", linkLabel: 'Kanal havolasi', ph: 'https://t.me/kanal_nomi', note: () => "Skrinshot avtomatik tekshiriladi (kanal nomi va «Siz bu kanalga qo'shildingiz» yozuvi ko'rinishi kerak). Botni admin qilish shart emas." },
+  ig_like: { icon: '❤️', label: 'Instagram layk', hint: "Postni (yoki reelni) oching, layk bosing va qizil yurak ko'ringan skrinshot yuboring.", linkLabel: 'Instagram post yoki reel havolasi', ph: 'https://www.instagram.com/p/ABC123/', note: () => "Skrinshot avtomatik tekshiriladi (qizil yurak bo'lishi kerak). Tasdiqlangan har bir layk uchun to'lanadi." },
+  ig_follow: { icon: '📸', label: 'Instagram obuna', hint: "Profilga obuna bo'ling, so'ng profil sahifasida tepada login va \"Following\" yozuvi ko'ringan skrinshot yuboring.", linkLabel: 'Instagram profil havolasi', ph: 'https://www.instagram.com/username/', note: () => "Skrinshot avtomatik tekshiriladi (profil logini va \"Following\" ko'rinishi kerak). Tasdiqlangan har bir obuna uchun to'lanadi." }
+};
+const STATUS = { pending: 'Kutilmoqda', approved: 'Tasdiqlandi', paid: "To'landi", rejected: 'Rad etildi', active: 'Faol', completed: 'Tugadi', stopped: "To'xtatildi" };
+
+let toastT;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3200); }
+async function api(p, body) {
+  const h = { 'Content-Type': 'application/json' };
+  if (S.token) h.Authorization = 'Bearer ' + S.token;
+  if (S.admin) h['X-Admin'] = S.admin;
+  const r = await fetch('/api' + p, { method: body ? 'POST' : 'GET', headers: h, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    if (r.status === 401 && p.startsWith('/admin/') && p !== '/admin/login') { S.admin = ''; closeLayer(); }
+    else if (r.status === 401 && !['/login', '/register', '/admin/login'].includes(p)) logout(true);
+    throw new Error(j.error || 'Xatolik');
+  }
+  return j;
+}
+function logout(silent) { ls.del('tk'); S.token = ''; S.me = null; S.admin = ''; closeLayer(); authView(); if (silent) toast('Qayta kiring'); }
+async function run(btn, fn) {
+  if (btn) btn.disabled = true;
+  try { await fn(); } catch (e) { toast(e.message); }
+  if (btn && btn.isConnected) btn.disabled = false;
+}
+function copy(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => toast('Nusxalandi'), () => fallback());
+  fallback();
+  function fallback() { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); toast('Nusxalandi'); } catch (e) { toast('Nusxalab bo\'lmadi'); } t.remove(); }
+}
+function compress(file) {
+  return new Promise((ok, no) => {
+    const img = new Image();
+    img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL('image/jpeg', .8)); };
+    img.onerror = () => no(new Error("Rasm o'qilmadi"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+const fmtDate = ts => new Date(ts).toLocaleString('uz', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+// ---------- Kirish / Ro'yxatdan o'tish ----------
+function authView() {
+  const reg = S.mode === 'register';
+  $('#app').innerHTML = `<div class="auth">
+    <h1>ObunaPul</h1><p class="muted">Kanallarga obuna bo'ling va pul ishlang.</p>
+    <div class="tabs"><button data-act="mode" data-m="login" class="${reg ? '' : 'on'}">Kirish</button><button data-act="mode" data-m="register" class="${reg ? 'on' : ''}">Ro'yxatdan o'tish</button></div>
+    <label for="u">Login</label><input id="u" autocomplete="username" autocapitalize="none" maxlength="20">
+    <label for="p">Parol</label><input id="p" type="password" autocomplete="${reg ? 'new-password' : 'current-password'}">
+    <button class="btn" data-act="auth">${reg ? "Ro'yxatdan o'tish" : 'Kirish'}</button>
+    <p class="muted">${reg ? "Boshqa telefondan ham shu login va parol bilan kirishingiz mumkin." : "Akkauntingiz yo'qmi? Ro'yxatdan o'ting."}</p></div>`;
+}
+
+// ---------- Asosiy oyna ----------
+const TITLES = { tasks: 'Vazifalar', ads: 'Reklama berish', wallet: 'Hamyon', profile: 'Profil' };
+function shell() {
+  $('#app').innerHTML = `<header><button class="burger" data-act="support" aria-label="Menyu"><i></i><i></i><i></i></button><h1 id="ttl"></h1><span class="chip" id="chip"></span></header>
+  <main id="view"></main>
+  <nav>${[['tasks', '✅', 'Vazifalar'], ['ads', '📣', 'Reklama'], ['wallet', '💳', 'Hamyon'], ['profile', '👤', 'Profil']].map(t => `<button data-act="tab" data-t="${t[0]}"><b>${t[1]}</b>${t[2]}</button>`).join('')}</nav>`;
+  go(S.tab);
+}
+function chip() { const c = $('#chip'); if (c) c.textContent = money(S.me.balance); }
+async function go(t) {
+  S.tab = t; $('#ttl').textContent = TITLES[t]; chip();
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  $('#view').innerHTML = '<div class="empty">Yuklanmoqda…</div>';
+  try { await views[t](); } catch (e) { $('#view').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function refreshMe() { S.me = await api('/me'); chip(); }
+
+const views = {
+  async tasks() {
+    const r = await api('/tasks'), list = r.tasks;
+    $('#view').innerHTML = `<p class="muted">Vazifani bajaring va skrinshot yuboring. Skrinshot avtomatik tekshiriladi; aniq bo'lmasa admin ko'rib chiqadi.</p>` +
+      (list.length ? list.map(t => { const k = KIND_UI[t.kind] || KIND_UI.tg_sub; return `<div class="card"><div class="row"><div class="grow"><h3>${k.icon} ${esc(t.title)}</h3><span class="muted">${k.label}</span></div><span class="price">+${t.reward}</span></div>
+        <p class="muted" style="margin:8px 0 0">${k.hint}</p>
+        <div class="row" style="margin-top:12px"><button class="btn ghost sm grow" data-act="open" data-l="${esc(t.link)}">Ochish</button><button class="btn sm grow" data-act="shot" data-id="${t.id}" data-k="${t.kind}">Skrinshot yuborish</button></div></div>`; }).join('')
+        : '<div class="empty">Hozircha vazifa yo\'q.<br>Birozdan keyin qayta kiring.</div>') +
+      (r.pending.length ? '<h3 style="margin:18px 2px 8px">Tekshiruvda</h3>' + r.pending.map(x => `<div class="card row"><div class="grow"><b>${esc(x.title)}</b><div class="muted">${fmtDate(x.ts)}</div></div><span class="pill pending">⏳ +${x.reward}</span></div>`).join('') : '');
+  },
+  async ads() {
+    const mine = await api('/ads/mine');
+    S.adKind = S.adKind || 'tg_sub';
+    $('#view').innerHTML = `<div class="card"><h3>Yangi reklama</h3><label>Reklama turini tanlang</label>
+      <div class="kinds">${Object.keys(KIND_UI).map(k => `<button class="kind row" data-act="adkind" data-k="${k}"><span style="font-size:22px">${KIND_UI[k].icon}</span><span class="grow"><b>${KIND_UI[k].label}</b><br><span class="muted">Har biri ${money(S.cfg.kinds[k].price)}</span></span></button>`).join('')}</div>
+      <label for="al" id="allb"></label><input id="al" autocapitalize="none">
+      <label for="ac">Nechta kerak</label><input id="ac" type="number" inputmode="numeric" min="${S.cfg.minAds}" placeholder="50">
+      <div class="row" style="margin-bottom:10px"><span class="muted grow">Jami to'lov:</span><b class="price" id="cost">0 so'm</b></div>
+      <button class="btn" data-act="mkad">Reklama berish</button><p class="muted" id="adnote"></p></div>
+      <h3 style="margin:18px 2px 8px">Mening reklamalarim</h3>` +
+      (mine.length ? mine.map(a => `<div class="card"><div class="row"><div class="grow"><h3>${(KIND_UI[a.kind] || KIND_UI.tg_sub).icon} ${esc(a.title)}</h3><span class="muted">${(KIND_UI[a.kind] || KIND_UI.tg_sub).label} • ${a.done} / ${a.count}${a.pending ? ` (+${a.pending} tekshiruvda)` : ''}</span></div><span class="pill ${a.status}">${STATUS[a.status]}</span></div>
+        <div class="bar"><i style="width:${Math.min(100, a.done / a.count * 100)}%"></i></div>${a.status === 'active' ? `<button class="btn ghost sm" style="margin-top:10px" data-act="stopad" data-id="${a.id}">To'xtatish va qoldiqni qaytarish</button>` : ''}</div>`).join('') : '<div class="empty">Reklamalar yo\'q</div>');
+    $('#ac').addEventListener('input', updAd); updAd();
+  },
+  async wallet() {
+    const h = await api('/history');
+    const pend = h.withdrawals.some(w => w.status === 'pending');
+    $('#view').innerHTML = `<div class="card"><span class="muted">Hisobingiz</span><div class="bal">${money(S.me.balance)}</div>
+      <div class="row"><button class="btn good sm grow" data-act="topup">Hisob to'ldirish</button><button class="btn sm grow" data-act="wd" ${pend ? 'disabled' : ''}>${pend ? '⏳ Kuting…' : 'Pul yechish'}</button></div>
+      <p class="muted" style="margin-bottom:0">Pul yechish: kamida ${money(S.cfg.minWithdraw)}</p></div>
+      <h3 style="margin:18px 2px 8px">Tarix</h3>` + historyHtml(h);
+  },
+  async profile() {
+    await refreshMe();
+    $('#view').innerHTML = `<div class="card"><h3>${esc(S.me.username)}</h3><p class="muted">Jami ishlagan: <b class="price">${money(S.me.earned)}</b></p>
+      <button class="btn ghost" data-act="logout">Chiqish</button></div>
+      <h3 style="margin:18px 2px 8px">Xabarlar</h3>` + (S.me.notes.length ? S.me.notes.map(n => `<div class="card"><div>${esc(n.t)}</div><div class="muted">${fmtDate(n.ts)}</div></div>`).join('') : '<div class="empty">Xabarlar yo\'q</div>');
+    if (S.me.unread) api('/notes/read', {});
+  }
+};
+function updAd() {
+  const k = S.adKind, K = KIND_UI[k];
+  document.querySelectorAll('.kind').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  $('#allb').textContent = K.linkLabel; $('#al').placeholder = K.ph;
+  $('#cost').textContent = money((+$('#ac').value || 0) * S.cfg.kinds[k].price);
+  $('#adnote').innerHTML = K.note(S.cfg.bot);
+}
+function shotModal(id, kind) {
+  const K = KIND_UI[kind] || KIND_UI.tg_sub;
+  const m = modal(`<h3 style="margin-top:0">${K.icon} Skrinshot yuborish</h3><p class="muted">${K.hint}</p><label for="sf">Skrinshot</label><input id="sf" type="file" accept="image/*"><button class="btn" id="ss2">Yuborish</button>`);
+  m.querySelector('#ss2').onclick = e => run(e.target, async () => {
+    const f = m.querySelector('#sf').files[0]; if (!f) throw new Error('Skrinshotni tanlang');
+    const r = await api('/tasks/submit', { id: +id, shot: await compress(f) });
+    S.me.balance = r.balance; chip(); m.remove();
+    toast(r.paid ? `✅ Tasdiqlandi! +${money(r.reward)} hisobingizga tushdi` : "Skrinshot admin tekshiruviga yuborildi. Tasdiqlangach pul tushadi"); go('tasks');
+  });
+}
+function historyHtml(h) {
+  const rows = [...h.topups.map(x => ({ ...x, k: "To'ldirish", sign: '+' })), ...h.withdrawals.map(x => ({ ...x, k: `Yechish •••• ${x.card}`, sign: '−' }))].sort((a, b) => b.ts - a.ts);
+  return rows.length ? rows.map(r => `<div class="card row"><div class="grow"><b>${esc(r.k)}</b><div class="muted">${fmtDate(r.ts)}</div></div><div style="text-align:right"><b>${r.sign}${money(r.amount)}</b><br><span class="pill ${r.status}">${STATUS[r.status]}</span></div></div>`).join('') : '<div class="empty">Hali operatsiya yo\'q</div>';
+}
+
+// ---------- Hisob to'ldirish / yechish ----------
+function modal(html) { const m = document.createElement('div'); m.className = 'modal'; m.innerHTML = `<div class="box">${html}</div>`; m.addEventListener('click', e => { if (e.target === m) m.remove(); }); document.body.appendChild(m); return m; }
+function topupStep1() {
+  const m = modal(`<h3 style="margin-top:0">Hisob to'ldirish</h3><label for="ta">Summa (so'm)</label><input id="ta" type="number" inputmode="numeric" placeholder="${S.cfg.minTopup}"><button class="btn" id="tn">Davom etish</button>`);
+  m.querySelector('#tn').onclick = () => { const a = Math.floor(+m.querySelector('#ta').value); if (!(a >= S.cfg.minTopup)) return toast(`Minimal summa ${money(S.cfg.minTopup)}`); m.remove(); topupStep2(a); };
+}
+function topupStep2(amount) {
+  const num = S.cfg.card;
+  const m = modal(`<h3 style="margin-top:0">${money(amount)} o'tkazing</h3><p class="muted">Quyidagi kartaga to'lov qiling, so'ng chek rasmini yuboring.</p>
+    <div class="cardnum"><span>${esc(num)}</span><button class="btn ghost sm" id="cp">Nusxalash</button></div>
+    <div class="credit"><div class="chipimg"></div><div class="n">${esc(num)}</div><div class="h">${esc(S.cfg.holder)}</div><div class="visa">VISA</div></div>
+    <label for="cf" style="display:block;margin-top:14px">Chek rasmi</label><input id="cf" type="file" accept="image/*"><button class="btn" id="cs">Chekni yuborish</button>`);
+  m.querySelector('#cp').onclick = () => copy(num.replace(/\s/g, ''));
+  m.querySelector('#cs').onclick = e => run(e.target, async () => {
+    const f = m.querySelector('#cf').files[0]; if (!f) throw new Error('Chek rasmini tanlang');
+    await api('/topup', { amount, check: await compress(f) });
+    m.remove(); toast("Chek yuborildi. Admin tasdiqlashini kuting"); if (S.tab === 'wallet') go('wallet');
+  });
+}
+function withdrawModal() {
+  const m = modal(`<h3 style="margin-top:0">Pul yechish</h3><label for="wc">Karta raqami</label><input id="wc" inputmode="numeric" placeholder="8600 0000 0000 0000" maxlength="19">
+    <label for="wa">Summa (so'm), kamida ${S.cfg.minWithdraw}</label><input id="wa" type="number" inputmode="numeric"><button class="btn" id="wo">Tasdiqlash</button>`);
+  m.querySelector('#wc').addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim());
+  m.querySelector('#wo').onclick = e => run(e.target, async () => {
+    const r = await api('/withdraw', { card: m.querySelector('#wc').value, amount: +m.querySelector('#wa').value });
+    S.me.balance = r.balance; m.remove(); toast("So'rov yuborildi. Kuting"); go('wallet');
+  });
+}
+
+// ---------- Qo'llab-quvvatlash ----------
+const FAQ = [
+  ["Qanday qilib pul ishlayman?", "«Vazifalar»da vazifani tanlang va bajaring (kanalga obuna, Instagramda layk yoki obuna), so'ng bajarilganini ko'rsatuvchi skrinshotni yuboring. Telegram obunasini bot, Instagram skrinshotini avtomatik tizim tekshiradi va pul darrov tushadi. Aniq bo'lmasa admin ko'rib chiqadi."],
+  ["Har bir vazifaga qancha to'lanadi?", "Telegram obuna: 55 so'm. Instagram layk: 43 so'm. Instagram obuna: 52 so'm."],
+  ["Pulni qachon yechib olaman?", "Hisobingizda kamida 1 000 so'm bo'lganda. «Hamyon» → «Pul yechish», karta raqamingizni kiriting va tasdiqlang. Admin to'lovni amalga oshirgach, sizga xabar keladi."],
+  ["Skrinshotim tasdiqlanmadi", "Skrinshotda layk yoki obuna bo'lganingiz aniq ko'rinishi kerak. Boshqa odamning yoki avval yuborilgan rasm qabul qilinmaydi. To'g'ri skrinshot bilan qayta yuborishingiz mumkin."],
+  ["Hisobni qanday to'ldiraman?", "«Hamyon» → «Hisob to'ldirish», summani yozing, ko'rsatilgan kartaga pul o'tkazing va chek rasmini yuboring. Admin tasdiqlagach, pul hisobingizga tushadi."],
+  ["Reklamani qanday beraman?", "«Reklama» bo'limida avval turini tanlang: Telegram obuna (65 so'm), Instagram layk (50 so'm) yoki Instagram obuna (60 so'm). So'ng havola va kerakli sonni yozing, pul hisobingizdan avtomatik yechiladi. Telegram uchun bot kanalingizda admin bo'lishi shart."],
+  ["Boshqa telefondan kira olamanmi?", "Ha. Kirish oynasida o'z login va parolingizni yozing, akkauntingiz shu yerda ochiladi."]
+];
+async function supportView() {
+  const l = layer("Qo'llab-quvvatlash", `<h3 style="margin:0 0 8px">Ko'p so'raladigan savollar</h3>${FAQ.map(q => `<details><summary>${esc(q[0])}</summary><p>${esc(q[1])}</p></details>`).join('')}
+    <h3 style="margin:18px 0 0">Savolingiz boshqami? Yozing</h3><div class="chat" id="chat"></div>`, `<div class="sendbar"><input id="st" placeholder="Xabar yozing…" maxlength="1000" autocomplete="off"><button class="btn" id="ss">Yuborish</button></div>`);
+  const draw = async () => { const ms = await api('/support'); const c = $('#chat'); if (!c) return; c.innerHTML = ms.length ? ms.map(m => `<div class="msg ${m.from === 'user' ? 'me' : ''}">${esc(m.text)}</div>`).join('') : '<div class="muted">Hozircha xabar yo\'q</div>'; };
+  const send = () => run($('#ss'), async () => {
+    const v = $('#st').value.trim(); if (!v) return;
+    if (v.toLowerCase() === '/admin') { $('#st').value = ''; return adminLogin(); }
+    await api('/support', { text: v }); $('#st').value = ''; await draw();
+  });
+  $('#ss').onclick = send; $('#st').onkeydown = e => { if (e.key === 'Enter') send(); };
+  draw().catch(() => {});
+}
+function layer(title, body, foot) {
+  closeLayer();
+  const l = document.createElement('div'); l.className = 'layer'; l.id = 'layer';
+  l.innerHTML = `<header><button class="burger" data-act="back" aria-label="Orqaga" style="align-items:center;font-size:20px">←</button><h1>${esc(title)}</h1></header><div class="body">${body}</div>${foot || ''}`;
+  document.body.appendChild(l); return l;
+}
+function closeLayer() { const l = $('#layer'); if (l) l.remove(); }
+
+// ---------- Admin ----------
+function adminLogin() {
+  const m = modal(`<h3 style="margin-top:0">Admin</h3><label for="al1">Login</label><input id="al1" autocapitalize="none" autocomplete="off"><label for="al2">Parol</label><input id="al2" type="password" autocomplete="off"><button class="btn" id="al3">Kirish</button>`);
+  m.querySelector('#al3').onclick = e => run(e.target, async () => {
+    const r = await api('/admin/login', { login: m.querySelector('#al1').value.trim(), pass: m.querySelector('#al2').value });
+    S.admin = r.token; m.remove(); adminView('topups');
+    if (!r.bot) toast("Eslatma: so'rovlar faqat admin panelda ko'rinadi (Telegram xabari kelmaydi)");
+  });
+}
+let admTab = 'topups', admData = null;
+async function adminView(tab) {
+  admTab = tab || admTab;
+  const [ov, sup] = await Promise.all([api('/admin/overview'), api('/admin/support')]).catch(e => { toast(e.message); return []; });
+  if (!ov) return;
+  admData = { ov, sup };
+  const st = ov.stats;
+  const tabs = [['topups', "To'ldirishlar"], ['shots', 'Skrinshotlar'], ['wd', 'Yechishlar'], ['ads', 'Reklamalar'], ['sup', 'Xabarlar'], ['stat', 'Statistika']];
+  const wasScroll = $('#layer .body') ? $('#layer .body').scrollTop : 0;
+  const l = layer('Admin panel', `<div class="tabs" style="flex-wrap:wrap">${tabs.map(t => `<button data-act="atab" data-t="${t[0]}" class="${admTab === t[0] ? 'on' : ''}" style="flex:1 1 30%">${t[1]}</button>`).join('')}</div><div id="adm"></div>`);
+  const A = $('#adm');
+  const by = (a, f) => a.length ? a.map(f).join('') : '<div class="empty">Bo\'sh</div>';
+  if (admTab === 'topups') A.innerHTML = by(ov.topups, t => `<div class="card"><div class="row"><div class="grow"><b>#${t.id} ${esc(t.user)}</b><div class="muted">${fmtDate(t.ts)}</div></div><b>${money(t.amount)}</b></div>
+    <div class="row" style="margin-top:10px"><span class="pill ${t.status}">${STATUS[t.status]}</span><span class="grow"></span><button class="btn ghost sm" data-act="chk" data-id="${t.id}">Chek</button>${t.status === 'pending' ? `<button class="btn good sm" data-act="atp" data-id="${t.id}" data-ok="1">Tasdiqlash</button><button class="btn bad sm" data-act="atp" data-id="${t.id}" data-ok="0">Rad</button>` : ''}</div></div>`);
+  if (admTab === 'shots') A.innerHTML = by(ov.shots, x => `<div class="card"><div class="row"><div class="grow"><b>#${x.id} ${esc(x.user)}</b><div class="muted">${esc((KIND_UI[x.kind] || {}).label || '')}: ${esc(x.title || '')}</div>${x.auto === 'approved' ? '<div class="muted">🤖 avtomatik tasdiqlangan</div>' : ''}${x.note ? `<div class="muted">⚠️ ${esc(x.note)}</div>` : ''}</div><b>${money(x.reward || 0)}</b></div>
+    <div class="row" style="margin-top:10px"><span class="pill ${x.status}">${STATUS[x.status]}</span><span class="grow"></span><button class="btn ghost sm" data-act="chk" data-p="shot" data-id="${x.id}">Skrinshot</button>${x.status === 'pending' ? `<button class="btn good sm" data-act="ash" data-id="${x.id}" data-ok="1">Tasdiqlash</button><button class="btn bad sm" data-act="ash" data-id="${x.id}" data-ok="0">Rad</button>` : ''}</div></div>`);
+  if (admTab === 'wd') A.innerHTML = by(ov.withdrawals, w => `<div class="card"><div class="row"><div class="grow"><b>#${w.id} ${esc(w.user)}</b><div class="muted">${fmtDate(w.ts)}</div></div><b>${money(w.amount)}</b></div>
+    <div class="cardnum" style="font-size:17px"><span>${w.card.replace(/(.{4})/g, '$1 ').trim()}</span><button class="btn ghost sm" data-act="cp" data-v="${w.card}">Nusxalash</button></div>
+    <div class="row"><span class="pill ${w.status}">${STATUS[w.status]}</span><span class="grow"></span>${w.status === 'pending' ? `<button class="btn good sm" data-act="awd" data-id="${w.id}" data-ok="1">To'landi</button><button class="btn bad sm" data-act="awd" data-id="${w.id}" data-ok="0">Rad</button>` : ''}</div></div>`);
+  if (admTab === 'ads') A.innerHTML = by(ov.ads, a => `<div class="card"><div class="row"><div class="grow"><b>${esc(a.title)}</b><div class="muted">${esc((KIND_UI[a.kind] || KIND_UI.tg_sub).label)} • ${esc(a.user)} • ${a.done}/${a.count}</div></div><span class="pill ${a.status}">${STATUS[a.status]}</span></div>${a.status === 'active' ? `<button class="btn ghost sm" style="margin-top:10px" data-act="aad" data-id="${a.id}">To'xtatish</button>` : ''}</div>`);
+  if (admTab === 'sup') A.innerHTML = by(sup, u => `<div class="card"><b>${esc(u.user)}</b><div class="chat">${u.messages.map(m => `<div class="msg ${m.from === 'admin' ? 'me' : ''}">${esc(m.text)}</div>`).join('')}</div>
+    <div class="row"><input data-r="${u.userId}" placeholder="Javob…" style="margin:0"><button class="btn sm" data-act="arep" data-id="${u.userId}">Yuborish</button></div></div>`);
+  if (admTab === 'stat') A.innerHTML = [['Foydalanuvchilar', st.users], ["Hamyonlardagi jami", money(st.balances)], ['Faol reklamalar', st.activeAds], ['Jami obunalar', st.subs], ['Sof foyda (taxminan)', money(st.profit)]].map(r => `<div class="card row"><span class="grow muted">${r[0]}</span><b>${r[1]}</b></div>`).join('');
+  $('#layer .body').scrollTop = wasScroll;
+}
+
+// ---------- Hodisalar ----------
+const acts = {
+  mode: el => { S.mode = el.dataset.m; authView(); },
+  auth: el => run(el, async () => {
+    const body = { username: $('#u').value.trim(), password: $('#p').value };
+    if (S.mode === 'register') body.initData = tg ? tg.initData : '';
+    const r = await api(S.mode === 'register' ? '/register' : '/login', body);
+    S.token = r.token; ls.set('tk', r.token); S.me = r.me; shell();
+  }),
+  tab: el => go(el.dataset.t),
+  open: el => { const l = el.dataset.l; if (tg && /t\.me/.test(l) && tg.openTelegramLink) tg.openTelegramLink(l); else if (tg && tg.openLink) tg.openLink(l); else window.open(l, '_blank'); },
+  shot: el => shotModal(el.dataset.id, el.dataset.k),
+  adkind: el => { S.adKind = el.dataset.k; updAd(); },
+  mkad: el => run(el, async () => { const r = await api('/ads', { kind: S.adKind, link: $('#al').value, count: +$('#ac').value }); S.me.balance = r.balance; toast('Reklama joylandi'); go('ads'); }),
+  stopad: el => run(el, async () => { const r = await api(`/ads/${el.dataset.id}/stop`, {}); S.me.balance = r.balance; toast('Reklama to\'xtatildi'); go('ads'); }),
+  topup: topupStep1, wd: withdrawModal,
+  logout: () => logout(),
+  support: supportView, back: closeLayer,
+  atab: el => adminView(el.dataset.t),
+  ash: el => run(el, async () => { await api(`/admin/sub/${el.dataset.id}`, { ok: el.dataset.ok === '1' }); await adminView(); }),
+  atp: el => run(el, async () => { await api(`/admin/topup/${el.dataset.id}`, { ok: el.dataset.ok === '1' }); await adminView(); }),
+  awd: el => run(el, async () => { await api(`/admin/withdraw/${el.dataset.id}`, { ok: el.dataset.ok === '1' }); await adminView(); }),
+  aad: el => run(el, async () => { await api(`/admin/ads/${el.dataset.id}/stop`, {}); await adminView(); }),
+  arep: el => run(el, async () => { const i = document.querySelector(`input[data-r="${el.dataset.id}"]`); if (!i.value.trim()) return; await api('/admin/support/reply', { userId: +el.dataset.id, text: i.value }); await adminView(); }),
+  cp: el => copy(el.dataset.v),
+  chk: el => run(el, async () => {
+    const r = await fetch(`/api/admin/${el.dataset.p || 'check'}/${el.dataset.id}`, { headers: { Authorization: 'Bearer ' + S.token, 'X-Admin': S.admin } });
+    if (!r.ok) throw new Error('Chek topilmadi');
+    modal(`<img src="${URL.createObjectURL(await r.blob())}" alt="Chek">`);
+  })
+};
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el && acts[el.dataset.act]) acts[el.dataset.act](el); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'p') acts.auth(document.querySelector('[data-act="auth"]')); });
+
+addEventListener('message', e => { if (e.data === 'introDone') { const f = $('#intro'); if (f) { f.style.opacity = 0; setTimeout(() => f.remove(), 550); } } });
+setTimeout(() => { const f = $('#intro'); if (f) f.remove(); }, 12000); // xavfsizlik: intro 12 soniyadan keyin albatta yopiladi
+(async function boot() {
+  try { S.cfg = await api('/config'); } catch (e) {}
+  if (!S.token) return authView();
+  try { S.me = await api('/me'); shell(); } catch (e) { authView(); }
+})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

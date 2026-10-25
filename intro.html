@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>ObunaPul — 3D intro</title>
+<style>
+html,body{margin:0;height:100%;background:#0f1420;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+#re{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:12px 22px;border:0;border-radius:12px;background:#ffb547;color:#1b1300;font:700 15px system-ui,sans-serif;display:none;cursor:pointer}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="re">▶ Qayta ko'rish</button>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d'), re = document.getElementById('re');
+const Q = new URLSearchParams(location.search), COVER = Q.has('cover');
+let W, H, u, dpr;
+function size() { dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; u = Math.min(W / 100, H / 160); }
+addEventListener('resize', size); size();
+
+const F = 120, cl = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ez = x => 1 - Math.pow(1 - x, 3);
+const eb = x => 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2);
+function mul(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const P = (x, y, z) => { const s = F / (F + z); return [W / 2 + x * s * u, H / 2 + y * s * u, s]; };
+function R(x, y, z, ay, ax) {
+  let c = Math.cos(ay), s = Math.sin(ay), X = x * c + z * s, Z = -x * s + z * c;
+  c = Math.cos(ax); s = Math.sin(ax);
+  return [X, y * c - Z * s, y * s + Z * c];
+}
+
+/* ---------- sahna ma'lumotlari ---------- */
+const rnd = mul(7);
+const coins = [...Array(COVER ? 44 : 34)].map(() => {
+  const c = { x: (rnd() - .5) * 130, z: rnd() * 150 - 30, r: 3 + rnd() * 4.5, sp: 10 + rnd() * 14, y0: rnd() * 400, w: (rnd() - .5) * 5, ph: rnd() * 6, tl: (rnd() - .5) * 1.2 };
+  if (c.z < 0) c.x = (c.x < 0 ? -1 : 1) * (46 + rnd() * 24);
+  return c;
+});
+const stars = [...Array(70)].map(() => ({ x: rnd(), y: rnd() * .75, r: rnd() * 1.5 + .4, p: rnd() * 6 }));
+const sparks = [...Array(50)].map(() => ({ a: rnd() * 6.283, v: 18 + rnd() * 40, r: 1 + rnd() * 2.2, g: rnd() > .5 }));
+const ICONS = [
+  { p: new Path2D('M-1 -.1 L1 -.9 L.4 .9 L-.05 .3 Z'), c: [200, 85, 55], x: -30, y: -35, t0: 1.0, ph: 0 },
+  { p: new Path2D('M0 .9 C-1.6 -.2 -1 -1.1 -.45 -1.05 C-.15 -1 0 -.75 0 -.55 C0 -.75 .15 -1 .45 -1.05 C1 -1.1 1.6 -.2 0 .9Z'), c: [348, 100, 62], x: 0, y: -47, t0: 1.25, ph: 2 },
+  { p: new Path2D('M0 -1 A1 1 0 1 0 0 1 A1 1 0 1 0 0 -1 Z M-.18 -.6 H.18 V-.18 H.6 V.18 H.18 V.6 H-.18 V.18 H-.6 V-.18 H-.18 Z'), c: [162, 70, 52], x: 30, y: -35, t0: 1.5, ph: 4, eo: 1 }
+];
+
+/* ---------- chizish yordamchilari ---------- */
+function coin(cx, cy, cz, r, ay, ax, al) {
+  const N = 22, h = r * .24, A = [], B = [], L = [-.35, -.55, -.75];
+  for (let i = 0; i < N; i++) { const a = i / N * 6.2832, x = Math.cos(a) * r, y = Math.sin(a) * r; A.push(R(x, y, -h / 2, ay, ax)); B.push(R(x, y, h / 2, ay, ax)); }
+  const pj = p => P(cx + p[0], cy + p[1], cz + p[2]);
+  const poly = pts => { ctx.beginPath(); pts.forEach((p, i) => { const q = pj(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath(); };
+  ctx.globalAlpha = al;
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N, am = (i + .5) / N * 6.2832, n = R(Math.cos(am), Math.sin(am), 0, ay, ax);
+    if (n[2] >= 0) continue;
+    const l = .25 + .75 * Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]);
+    ctx.fillStyle = `hsl(36,88%,${18 + l * 34}%)`; poly([A[i], A[j], B[j], B[i]]); ctx.fill();
+  }
+  const nn = R(0, 0, -1, ay, ax), front = nn[2] < 0, cap = front ? A : B, nz = front ? nn : [-nn[0], -nn[1], -nn[2]];
+  const l = .25 + .75 * Math.max(0, nz[0] * L[0] + nz[1] * L[1] + nz[2] * L[2]);
+  ctx.fillStyle = `hsl(42,96%,${38 + l * 32}%)`; poly(cap); ctx.fill();
+  ctx.strokeStyle = `hsl(36,80%,${24 + l * 20}%)`; ctx.lineWidth = Math.max(1, r * u * .12 * P(0, 0, cz)[2]); ctx.stroke();
+  const zc = front ? -h / 2 : h / 2, sg = front ? 1 : -1;
+  const c0 = pj(R(0, 0, zc, ay, ax)), e1 = pj(R(r * sg * .62, 0, zc, ay, ax)), e2 = pj(R(0, r * .62, zc, ay, ax));
+  ctx.save();
+  ctx.transform((e1[0] - c0[0]) / 70, (e1[1] - c0[1]) / 70, (e2[0] - c0[0]) / 70, (e2[1] - c0[1]) / 70, c0[0], c0[1]);
+  ctx.font = '900 100px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = `hsl(34,85%,${26 + l * 14}%)`; ctx.fillText('$', 0, 6);
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+
+// qatlamlar yordamida 3D "extrude": paint(front) shakl chizadi
+function ext(x, y, z, sc, th, depth, paint) {
+  const q = P(x, y, z), k = u * q[2] * sc, c = Math.cos(th), s = Math.sin(th), n = 16;
+  for (let i = n; i >= 0; i--) {
+    const d = i / n * depth;
+    ctx.save(); ctx.translate(q[0] + (s * 1.1 + .35) * d * k, q[1] + d * k * .6); ctx.scale(k * c, k);
+    paint(i === 0, i / n); ctx.restore();
+  }
+}
+
+function bg(t) {
+  let g = ctx.createRadialGradient(W / 2, H * .42, 0, W / 2, H * .42, Math.max(W, H) * .8);
+  g.addColorStop(0, '#2a3b6e'); g.addColorStop(.55, '#161f3a'); g.addColorStop(1, '#0a0e19');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  stars.forEach(s => { ctx.globalAlpha = .35 + .35 * Math.sin(t * 2 + s.p); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r * dpr / 1.5, 0, 6.3); ctx.fill(); });
+  ctx.globalAlpha = 1;
+  // pol (perspektiv setka)
+  const hy = H * .74;
+  g = ctx.createLinearGradient(0, hy - 30 * u, 0, hy + 10 * u); g.addColorStop(0, 'rgba(255,181,71,0)'); g.addColorStop(.7, 'rgba(255,181,71,.22)'); g.addColorStop(1, 'rgba(255,181,71,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, hy - 30 * u, W, 40 * u);
+  ctx.strokeStyle = 'rgba(61,219,176,.22)'; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 12; i++) { const f = ((i + (t * .5 % 1)) / 12), y = hy + (H - hy) * f * f; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (let j = -9; j <= 9; j++) { ctx.beginPath(); ctx.moveTo(W / 2 + j * u * 3, hy); ctx.lineTo(W / 2 + j * u * 22, H); ctx.stroke(); }
+}
+
+function icon(ic, t) {
+  const e = cl((t - ic.t0) / 1); if (e <= 0) return;
+  const z = (1 - eb(e)) * 140, y = ic.y + Math.sin(t * 2 + ic.ph) * 1.4, th = Math.sin(t * 1.3 + ic.ph) * .9;
+  const [h, s, l] = ic.c;
+  ctx.globalAlpha = ez(e);
+  ext(ic.x, y, z, 7.5, th, .45, (front, f) => {
+    ctx.fillStyle = front ? `hsl(${h},${s}%,${l + 10}%)` : `hsl(${h},${s - 10}%,${l - 12 - f * 10}%)`;
+    ic.eo ? ctx.fill(ic.p, 'evenodd') : ctx.fill(ic.p);
+    if (front) { ctx.lineWidth = .06; ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.stroke(ic.p); }
+  });
+  ctx.globalAlpha = 1;
+}
+
+function logo(t) {
+  const lt = cl((t - 2) / 1.5); if (lt <= 0) return;
+  ctx.font = '900 100px "Arial Black",system-ui,sans-serif';
+  const tw = ctx.measureText('ObunaPul').width, sc = 86 / tw;
+  const th = (1 - eb(lt)) * -Math.PI * 1.1 + Math.sin(t * .9) * .17 * ez(cl((t - 3.6) / 1));
+  const shine = ((t - 3.6) * .45) % 2.2;
+  ctx.globalAlpha = cl(lt * 4);
+  ext(0, 3, (1 - ez(lt)) * -50, sc * (.35 + .65 * ez(lt)), th, 16, (front, f) => {
+    ctx.font = '900 100px "Arial Black",system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (front) {
+      let g = ctx.createLinearGradient(0, -45, 0, 45); g.addColorStop(0, '#fff0b0'); g.addColorStop(.45, '#ffb547'); g.addColorStop(1, '#e2851a');
+      ctx.fillStyle = g; ctx.fillText('ObunaPul', 0, 0);
+      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.strokeText('ObunaPul', 0, 0);
+      if (lt >= 1 && shine < 1.4) {
+        const px = (-.7 + shine * 1.4) * tw; g = ctx.createLinearGradient(px - 60, -40, px + 60, 40);
+        g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, 'rgba(255,255,255,.85)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g; ctx.fillText('ObunaPul', 0, 0);
+      }
+    } else { ctx.fillStyle = `hsl(30,78%,${32 - f * 16}%)`; ctx.fillText('ObunaPul', 0, 0); }
+  });
+  ctx.globalAlpha = 1;
+}
+
+function burst(t) {
+  const tb = 3.3, d = t - tb; if (d < 0 || d > 2) return;
+  const c = P(0, 3, 0); ctx.strokeStyle = `rgba(255,181,71,${.7 * (1 - d / 2)})`; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(c[0], c[1], d * 55 * u, d * 18 * u, 0, 0, 6.3); ctx.stroke();
+  sparks.forEach(s => {
+    const x = c[0] + Math.cos(s.a) * s.v * d * u * .8, y = c[1] + Math.sin(s.a) * s.v * d * u * .8 + 14 * d * d * u;
+    ctx.globalAlpha = 1 - d / 2; ctx.fillStyle = s.g ? '#ffe08a' : '#3ddbb0';
+    ctx.beginPath(); ctx.arc(x, y, s.r * u * .4, 0, 6.3); ctx.fill();
+  }); ctx.globalAlpha = 1;
+}
+
+function texts(t) {
+  const ta = cl((t - 3.7) / .7), tp = cl((t - 4.3) / .6);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (ta > 0) {
+    ctx.globalAlpha = ez(ta); ctx.font = `700 ${4.6 * u}px system-ui,sans-serif`; ctx.fillStyle = '#eef2fb';
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8; ctx.fillText("Obuna bo'l — pul ishla", W / 2, H / 2 + (22 + (1 - ez(ta)) * 3) * u); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+  }
+  if (tp > 0) {
+    const s = eb(tp), cx = W / 2, cy = H / 2 + 35 * u, w = 66 * u * s, h = 10 * u * s;
+    const g = ctx.createLinearGradient(0, cy - h / 2, 0, cy + h / 2); g.addColorStop(0, '#ffd27a'); g.addColorStop(1, '#ff9f1c');
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.roundRect(cx - w / 2, cy - h / 2 + .9 * u, w, h, h / 2); ctx.fill();
+    ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(cx - w / 2, cy - h / 2, w, h, h / 2); ctx.fill();
+    ctx.fillStyle = '#1b1300'; ctx.font = `800 ${4.1 * u * s}px system-ui,sans-serif`; ctx.fillText("Har obuna uchun 55 so'm", cx, cy + .2 * u);
+    ctx.fillStyle = '#8b98b8'; ctx.font = `600 ${3.2 * u}px system-ui,sans-serif`; ctx.globalAlpha = tp; ctx.fillText('Telegram  •  Instagram', cx, cy + 10 * u); ctx.globalAlpha = 1;
+  }
+}
+
+function draw(t) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  bg(t);
+  const range = H / u + 40, fade = cl(t / .8);
+  const L = coins.map(c => ({ c, y: ((c.y0 + c.sp * t) % range) - range / 2 })).sort((a, b) => b.c.z - a.c.z);
+  const cd = o => coin(o.c.x, o.y, o.c.z, o.c.r, o.c.ph + t * o.c.w, o.c.tl + Math.sin(t + o.c.ph) * .3, fade * (1 - cl(o.c.z / 220) * .5));
+  L.filter(o => o.c.z > 0).forEach(cd);
+  ICONS.forEach(i => icon(i, t)); logo(t); burst(t); texts(t);
+  L.filter(o => o.c.z <= 0).forEach(cd);
+  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.max(W, H) * .8);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.5)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+/* ---------- ishga tushirish ---------- */
+let t0, fired = false;
+const EMB = parent !== window;
+window.onIntroDone = window.onIntroDone || function () { if (EMB) parent.postMessage('introDone', '*'); };
+function start() { t0 = performance.now(); fired = false; re.style.display = 'none'; }
+function loop(now) {
+  const t = (now - t0) / 1000; draw(t);
+  if (!fired && t > 6) { fired = true; if (!EMB) re.style.display = 'block'; window.onIntroDone(); }
+  requestAnimationFrame(loop);
+}
+if (COVER) { draw(parseFloat(Q.get('t')) || 9.5); }
+else { start(); requestAnimationFrame(loop); cv.onclick = () => { t0 = performance.now() - 6200; }; re.onclick = start; }
+</script>
+</body>
+</html>

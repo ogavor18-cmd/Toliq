@@ -1,0 +1,4 @@
+// Oddiy service worker: ilova o'rnatiladigan bo'lishi uchun. API so'rovlari doim tarmoqdan.
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', e => { if (e.request.method === 'GET' && !e.request.url.includes('/api/')) e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
